@@ -13,13 +13,13 @@ namespace ClockworkConfigurator.Unity
             Configurator.LogWarning += Debug.LogWarning;
             Configurator.LogError += Debug.LogError;
             Configurator.Log += Debug.Log;
-            Configurator.Load(Application.PersistentDataPath + / "Settings", "config.json");
+            Configurator.Load(Application.PersistentDataPath + "/Settings", "config.json");
         }
 
         private static void OnQuit()
         {
             Configurator.OnQuit();
-            Configurator.Save(Application.PersistentDataPath + / "Settings", "config.json");
+            Configurator.Save(Application.PersistentDataPath + "/Settings", "config.json");
         }
     }
 }
