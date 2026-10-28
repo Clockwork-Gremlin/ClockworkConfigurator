@@ -1,0 +1,8 @@
+{
+  "name": "com.ClockworkGremlin.ClockworkConfigurator",
+  "version": "1.0.0",
+  "displayName": "ClockworkConfigurator",
+  "description": "Config system.",
+  "unity": "2021.1",
+  "dependencies": {}
+}
