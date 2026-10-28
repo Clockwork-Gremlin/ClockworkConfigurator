@@ -18,6 +18,9 @@ namespace ClockworkConfigurator.Core
         
         internal static void RegisterSetting(string settingsGroup, SettingBase settingBase)
         {
+#if UNITY_EDITOR
+            Log?.Invoke(settingBase.ID());
+#endif
             if (RegisteredSettings.ContainsKey(settingBase.ID()))
                 RegisteredSettings.Remove(settingBase.ID()); //clean up any lingering static data from previous runs
             RegisteredSettings.Add(settingBase.ID(), settingBase);

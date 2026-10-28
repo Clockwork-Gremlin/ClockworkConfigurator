@@ -5,7 +5,7 @@ namespace ClockworkConfigurator.Unity
 {
     public static class UnitySettingsLoader
     {
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void OnLoad()
         {
             Application.quitting += OnQuit;
