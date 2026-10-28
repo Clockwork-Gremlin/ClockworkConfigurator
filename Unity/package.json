@@ -4,5 +4,7 @@
   "displayName": "Clockwork Configurator",
   "description": "Config system.",
   "unity": "2021.1",
-  "dependencies": {}
+  "dependencies": {
+    "com.unity.nuget.newtonsoft-json": "3.2.1"
+  }
 }
