@@ -8,52 +8,45 @@ namespace ClockworkConfigurator.Core
 {
     public static class Configurator
     {
+        public static ISettingsManager SettingsManager {get; set;}
+
         public static Dictionary<string, SettingBase> RegisteredSettings { get; private set; } = new();
+        private static Dictionary<string, object> loadedSettings = new();
         
-        public static Action<String> LogWarning;
-        public static Action<String> LogError;
-        public static Action<String> Log;
+        public static void Log(string message) => SettingsManager?.Log(message);
+        public static void LogWarning(string message) => SettingsManager?.LogWarning(message);
+        public static void LogError(string message) => SettingsManager?.LogError(message);
 
         public static Action<SettingBase> SettingRegistered;
         
-        internal static void RegisterSetting(string settingsGroup, SettingBase settingBase)
-        {
-//#if UNITY_EDITOR
-//            Log?.Invoke(settingBase.ID());
-//#endif
-            if (RegisteredSettings.ContainsKey(settingBase.ID()))
-                RegisteredSettings.Remove(settingBase.ID()); //clean up any lingering static data from previous runs
-            RegisteredSettings.Add(settingBase.ID(), settingBase);
-        }
-        
-        public static void OnStart()
-        {
-            LogWarning = null;
-            LogError = null;
-            Log = null;
-            SettingRegistered = null;
-        }
-
-        public static void OnQuit()
+        internal static void RegisterSetting(string settingsGroup, SettingBase setting)
         {
             
+            if (RegisteredSettings.ContainsKey(setting.Id))
+                RegisteredSettings.Remove(setting.Id);
+            RegisteredSettings.Add(setting.Id, setting);
+
+            if(setting.HasFlag(SettingFlags.SERIALIZED) && loadedSettings.ContainsKey(setting.Id))
+            {
+                setting.ParseUnsafe(loadedSettings[setting.Id]);
+            }
         }
         
         public static void ResetSettingsGroup(string settingsGroup)
         {
             foreach (var setting in RegisteredSettings.Values)
             {
-                if(settingsGroup == setting.GroupId()) 
+                if(settingsGroup == setting.GroupId) 
                     setting.Reset();
             }
         }
         
 
-        public static void Save(string directory, string filename)
+        public static void Save()
         {
-            var filePath = Path.Combine(directory, filename);
+            var filePath = Path.Combine(SettingsManager.GetFilePath(), SettingsManager.FileName);
    
-            Log?.Invoke($"Attempting to save config info to {filePath}");
+            Log($"Attempting to save config info to {filePath}");
             
             var saveData = new Dictionary<string, Dictionary<string, object>>();
             
@@ -61,33 +54,33 @@ namespace ClockworkConfigurator.Core
             {
                 if (setting.Value.HasFlag(SettingFlags.SERIALIZED))
                 {
-                    if(!saveData.ContainsKey(setting.Value.GroupId()))
-                        saveData.Add(setting.Value.GroupId(), new Dictionary<string, object>());
-                    saveData[setting.Value.GroupId()].Add(setting.Key, setting.Value.GetWrappedValue());
+                    if(!saveData.ContainsKey(setting.Value.GroupId))
+                        saveData.Add(setting.Value.GroupId, new Dictionary<string, object>());
+                    saveData[setting.Value.GroupId].Add(setting.Key, setting.Value.GetWrappedValue());
                 }
             }
             
             var saveJson = JsonConvert.SerializeObject(saveData, Formatting.Indented);
             
-            if (!Directory.Exists(directory))
-                Directory.CreateDirectory(directory);
+            if (!Directory.Exists(SettingsManager.GetFilePath()))
+                Directory.CreateDirectory(SettingsManager.GetFilePath());
             File.WriteAllText(filePath, saveJson);
         }
         
-        public static void Load(string directory, string filename)
+        public static void Load()
         {
-            var filePath = Path.Combine(directory, filename);
-
-            Log?.Invoke($"Attempting to pull saved config info from {filePath}");
+            var filePath = Path.Combine(SettingsManager.GetFilePath(), SettingsManager.FileName);
+            Log(filePath);
             
             if (!File.Exists(filePath))
             {
-                Log?.Invoke("Failed to find config file, falling back to defaults...");
+                Log("Failed to find config file, falling back to defaults...");
                 return;
             }
             
             var json = File.ReadAllText(filePath);
             var loadData = JsonConvert.DeserializeObject<Dictionary<string, Dictionary<string, object>>>(json);
+            loadedSettings = new();
 
             if (loadData == null) return;
 
@@ -95,22 +88,7 @@ namespace ClockworkConfigurator.Core
             {
                 foreach (var loadingSetting in loadSettingGroup.Value)
                 {
-                    if (RegisteredSettings.ContainsKey(loadingSetting.Key))
-                    {
-                        var registeredSetting = RegisteredSettings[loadingSetting.Key];
-                        if (registeredSetting.HasFlag(SettingFlags.SERIALIZED))
-                        {
-                            registeredSetting.ParseUnsafe(loadingSetting.Value);
-                        }
-                        else
-                        {
-                            LogWarning?.Invoke($"Attempted to load non-serialized setting {loadingSetting.Key}, discarding...");
-                        }
-                    }
-                    else
-                    {
-                        LogWarning?.Invoke($"Attempted to load unknown setting with name {loadingSetting.Key}, ignoring...");
-                    }
+                    loadedSettings.Add(loadingSetting.Key, loadingSetting.Value);
                 }
             }
         }

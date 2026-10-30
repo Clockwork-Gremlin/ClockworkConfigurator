@@ -13,9 +13,8 @@ namespace ClockworkConfigurator.Core
             SettingFlags flags = SettingFlags.NONE) where T : IConvertible
         {
             var setting = new Setting<T>(groupId, id, description, defaultValue, flags);
-            
             Configurator.RegisterSetting(groupId, setting);
-      
+    
             return setting;
         }
         
@@ -33,6 +32,9 @@ namespace ClockworkConfigurator.Core
             return setting;
         }
         
+        /// <summary>
+        /// Registered a clamped setting with 0 - 100 range
+        /// </summary>
         public static ClampedSetting<int> RegisterPercentage(
             string groupId, 
             string id, 
@@ -40,9 +42,7 @@ namespace ClockworkConfigurator.Core
             int defaultValue,
             SettingFlags flags = SettingFlags.NONE)
         {
-            var setting = new ClampedSetting<int>(groupId, id, description, defaultValue, 0, 100, flags);
-            Configurator.RegisterSetting(groupId, setting);
-            return setting;
+            return RegisterClamped<int>(groupId, id, description, defaultValue, 0, 100, flags);
         }
         
     }

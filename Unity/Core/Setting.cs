@@ -6,70 +6,55 @@ namespace ClockworkConfigurator.Core
     
     public class Setting <T> : SettingBase where T : IConvertible
     {
-        public readonly string Name;
-        public readonly string DisplayDescription;
-        private readonly T _defaultValue;
-        private T _temporaryValue;
-        private readonly SettingFlags _flags;
-        
-        private readonly string _groupId;
-        public override string GroupId() => _groupId;
 
-        private T _value;
-        public T Value => _value;
+        public override string Id {get;}
+        public override string GroupId {get;}
+
+        public readonly string DisplayDescription;
+        public T Value {get; protected set;}
+        public T DefaultValue {get; protected set;}
+        public T TemporaryValue {get; protected set;}
+        private readonly SettingFlags _flags;
 
         public Action<T> OnSettingChanged { get; set; }
         public Action<T> OnSettingApplied { get; set; }
 
         public Setting(string groupID, string name, string description, T startingValue, SettingFlags flags = SettingFlags.NONE)
         {
-            _groupId = groupID;
             _flags = flags;
-            _value = startingValue;
-            _defaultValue = startingValue;
-            Name = name;
+            Value = startingValue;
+            DefaultValue = startingValue;
+            GroupId = groupID.ToLower();
+            Id = name.ToLower().Replace(' ', '_');
             DisplayDescription = description;
         }
 
         public virtual Setting<T> Set(T newValue, bool asServer = false)
         {
-            _temporaryValue = newValue;
-            OnSettingChanged?.Invoke(_temporaryValue);
+            TemporaryValue = newValue;
+            OnSettingChanged?.Invoke(TemporaryValue);
             return this;
         }
 
         public override void Default()
         {
-            _value = _defaultValue;
-            _temporaryValue = _defaultValue;
+            Value = DefaultValue;
+            TemporaryValue = DefaultValue;
             OnSettingChanged?.Invoke(Value);
             OnSettingApplied?.Invoke(Value);
         }
         
         public override void Reset()
         {
-            _temporaryValue = _value;
+            TemporaryValue = Value;
             OnSettingChanged?.Invoke(Value);
             OnSettingApplied?.Invoke(Value);
         }
         
         public override void Apply(bool send = true)
         {
-            _value = _temporaryValue;
+            Value = TemporaryValue;
             OnSettingApplied?.Invoke(Value);
-        }
-
-        public T Get()
-        {
-            return _value;
-        }
-
-        public override void Write(Dictionary<string, dynamic> storageDict)
-        {
-            if (storageDict.ContainsKey(Name))
-                storageDict[Name] = Value;
-            else
-                storageDict.Add(Name, _value);
         }
 
         public override void ParseUnsafe(object valueToParse)
@@ -80,18 +65,13 @@ namespace ClockworkConfigurator.Core
             }
             catch (Exception e)
             {
-                Configurator.LogWarning?.Invoke($"{e.GetType()}! Settings contained definition for {Name} ({valueToParse}), but failed to parse value to corresponding type {typeof(T)}. Reverting to default value.");
+                Configurator.LogWarning($"{e.GetType()}! Settings contained definition for {Id} ({valueToParse}), but failed to parse value to corresponding type {typeof(T)}. Reverting to default value.");
             }
         }
 
-        public override string ID()
-        {
-            return Name;
-        }
-        
         public override object GetWrappedValue()
         {
-            return _value;
+            return Value;
         }
 
         public override bool HasFlag(SettingFlags flags)
