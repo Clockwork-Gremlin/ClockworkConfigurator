@@ -26,7 +26,7 @@ namespace ClockworkConfigurator.Core
                 RegisteredSettings.Remove(setting.Id);
             RegisteredSettings.Add(setting.Id, setting);
 
-            if(setting.HasFlag(SettingFlags.SERIALIZED) && loadedSettings.ContainsKey(setting.Id))
+            if(setting.HasFlag(SettingFlags.SERIALIZED) && loadedSettings.ContainsKey(setting.Id)) //if we register a setting after it loads we try to apply the loaded value immediately
             {
                 setting.ParseUnsafe(loadedSettings[setting.Id]);
             }
@@ -91,6 +91,15 @@ namespace ClockworkConfigurator.Core
                     loadedSettings.Add(loadingSetting.Key, loadingSetting.Value);
                 }
             }
+			
+			foreach (var setting in RegisteredSettings) //Do this to ensure that any settings created before we load are filled out
+			{
+				if(setting.HasFlag(SettingFlags.SERIALIZED) && loadedSettings.ContainsKey(setting.Id))
+				{
+					setting.ParseUnsafe(loadedSettings[setting.Id]);
+				}
+			}
+			
         }
 
     }
